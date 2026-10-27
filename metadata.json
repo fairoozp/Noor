@@ -1,0 +1,11 @@
+{
+  "name": "Noor - Islamic Prayer Times \u0026 Alerts",
+  "description": "Accurate Islamic prayer times based on your location with customizable Adhan alerts, end-of-prayer reminders, countdowns, and sound presets.",
+  "requestFramePermissions": [
+    "geolocation",
+    "notifications"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
