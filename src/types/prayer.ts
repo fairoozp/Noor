@@ -5,6 +5,8 @@ export type AlertSoundId =
   | 'adhan_madinah'
   | 'adhan_fajr_melody'
   | 'adhan_alaqsa'
+  | 'adhan_mishary'
+  | 'adhan_abdulbasit'
   | 'soft_dawn_chime'
   | 'oud_melody'
   | 'resonant_bowl'

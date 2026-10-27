@@ -48,6 +48,8 @@ import { QiblaModal } from './components/QiblaModal.tsx';
 import { MonthlyCalendarModal } from './components/MonthlyCalendarModal.tsx';
 import { NotificationModal } from './components/NotificationModal.tsx';
 import { GitHubPublishModal } from './components/GitHubPublishModal.tsx';
+import { MobileTabBar } from './components/MobileTabBar.tsx';
+import { MobileMenuModal } from './components/MobileMenuModal.tsx';
 
 const DEFAULT_LOCATION: UserLocation = {
   city: 'Mecca',
@@ -127,6 +129,7 @@ export default function App() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isNotificationModalOpen, setIsNotificationModalOpen] = useState(false);
   const [isGitHubPublishModalOpen, setIsGitHubPublishModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [prayerFocusForSounds, setPrayerFocusForSounds] = useState<PrayerName | null>(null);
 
   // Keep latest refs for scheduler
@@ -332,10 +335,10 @@ export default function App() {
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 sm:space-y-8 pb-28 md:pb-8">
         {/* Permission / Status Alert Banner if not enabled */}
         {notificationPermission !== 'granted' && (
-          <div className="p-4 rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="p-3.5 sm:p-4 rounded-xl sm:rounded-2xl bg-emerald-950/40 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
                 <Bell className="w-5 h-5" />
@@ -511,6 +514,36 @@ export default function App() {
         onClose={() => setIsCalendarModalOpen(false)}
         location={location}
         settings={settings}
+      />
+
+      {/* Mobile Bottom Navigation Bar (Visible on mobile screens) */}
+      <MobileTabBar
+        onOpenSounds={() => {
+          setPrayerFocusForSounds(null);
+          setIsSoundsModalOpen(true);
+        }}
+        onOpenQibla={() => setIsQiblaModalOpen(true)}
+        onOpenCalendar={() => setIsCalendarModalOpen(true)}
+        onOpenMore={() => setIsMobileMenuOpen(true)}
+        onScrollToTop={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+      />
+
+      {/* Mobile Drawer Menu Modal */}
+      <MobileMenuModal
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        location={location}
+        notificationPermission={notificationPermission}
+        onOpenNotifications={() => setIsNotificationModalOpen(true)}
+        onOpenSettings={() => setIsSettingsModalOpen(true)}
+        onOpenGitHubPublish={() => setIsGitHubPublishModalOpen(true)}
+        onOpenLocation={() => setIsLocationModalOpen(true)}
+        onOpenSounds={() => {
+          setPrayerFocusForSounds(null);
+          setIsSoundsModalOpen(true);
+        }}
+        onOpenQibla={() => setIsQiblaModalOpen(true)}
+        onOpenCalendar={() => setIsCalendarModalOpen(true)}
       />
     </div>
   );

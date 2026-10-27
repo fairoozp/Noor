@@ -8,7 +8,7 @@ Noor is an Islamic prayer times and Adhan alerts Progressive Web Application (PW
 
 - 🕋 **Astronomical Solar Accuracy**: Computes exact prayer timings using standard calculation authorities (Muslim World League, Umm Al-Qura, ISNA, Egyptian General Authority, Karachi, Dubai, Qatar, Kuwait, Singapore, Turkey) and Shafi'i / Hanafi Asr madhab rules.
 - ⏳ **End-of-Prayer Timers & Warnings**: Live countdown showing elapsed progress and remaining minutes before the current prayer window closes, with configurable advance audio alerts (default: 15 minutes before expiry).
-- 🔊 **Adhan & Alert Sound Engine**: Built-in Web Audio synthesis and melodic Adhan soundscapes (Makkah, Madinah, Al-Aqsa, Fajr dawn melody, acoustic chimes, and warning gongs).
+- 🔊 **Authentic Original Adhan Audio**: Authentic high-fidelity audio recordings including Grand Mosque Makkah (Sheikh Ali Ibn Ahmad Mulla), Prophet's Mosque Madinah, Fajr dawn Adhan ("Assalatu khayrun minan-nawm"), Al-Aqsa Jerusalem, Sheikh Mishary Rashid Alafasy, and Sheikh Abdul Basit, plus ambient crystal chimes and pre-end warning gongs.
 - 🔔 **Push & In-App Notification System**: Service worker push notifications with rich titles and badges, plus an always-on in-app audio-visual banner fallback.
 - 📱 **Installable PWA**: Install directly on Android (Chrome), iOS (Safari "Add to Home Screen"), and Desktop with full offline caching.
 - 🧭 **Qibla Direction Finder**: Computes precise Great Circle bearing towards the Kaaba (Mecca) from any GPS coordinate on earth.

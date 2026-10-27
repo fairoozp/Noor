@@ -53,7 +53,7 @@ export const DailyPrayerList: React.FC<DailyPrayerListProps> = ({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-3.5">
         {prayers.map((prayer) => {
           const soundPreset = SOUND_PRESETS.find(s => s.id === prayer.soundId) || SOUND_PRESETS[0];
           const isPlayingThis = playingSoundId === prayer.soundId;
@@ -61,7 +61,7 @@ export const DailyPrayerList: React.FC<DailyPrayerListProps> = ({
           return (
             <div
               key={prayer.id}
-              className={`group relative p-5 rounded-2xl border transition-all ${
+              className={`group relative p-4 sm:p-5 rounded-xl sm:rounded-2xl border transition-all ${
                 prayer.isCurrent
                   ? 'bg-slate-900/90 border-emerald-500/50 shadow-lg shadow-emerald-950/30 ring-1 ring-emerald-500/30'
                   : 'bg-slate-900/50 border-slate-800/80 hover:border-slate-700 hover:bg-slate-900/80'

@@ -1,5 +1,5 @@
 import React from 'react';
-import { MapPin, Volume2, Compass, Settings, Calendar, Bell, BellOff, Share2, Github, Smartphone } from 'lucide-react';
+import { MapPin, Volume2, Compass, Settings, Calendar, Bell, BellOff, Smartphone } from 'lucide-react';
 import { PWAInstallButton } from './PWAInstallButton.tsx';
 import { UserLocation } from '../types/prayer.ts';
 import { NotificationPermissionState } from '../services/notificationService.ts';
@@ -28,33 +28,31 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenSettings,
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-slate-950/85 backdrop-blur-md border-b border-slate-800/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4 sm:gap-6">
+    <header className="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/80 safe-area-top">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-3">
         {/* Zone 1: Wordmark */}
-        <div className="flex items-center gap-3 whitespace-nowrap shrink-0">
-          <a href="#" className="flex items-center gap-2.5 group">
-            <span className="w-8 h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-lg group-hover:bg-emerald-600/30 group-hover:scale-105 transition-all shadow-sm">
+        <div className="flex items-center gap-2 sm:gap-2.5 whitespace-nowrap shrink-0">
+          <a href="#" className="flex items-center gap-2 group">
+            <span className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold text-base sm:text-lg group-hover:bg-emerald-600/30 transition-all shadow-sm">
               ن
             </span>
-            <div className="flex flex-col">
-              <span className="text-base font-bold tracking-tight text-white flex items-center gap-1.5">
-                Noor
-                <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 uppercase tracking-wider">
-                  PWA
-                </span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base sm:text-lg font-bold tracking-tight text-white">Noor</span>
+              <span className="hidden xs:inline text-[9px] font-semibold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-400 uppercase tracking-wider">
+                PWA
               </span>
             </div>
           </a>
         </div>
 
-        {/* Zone 2: Navigation links */}
+        {/* Zone 2: Desktop Navigation links */}
         <nav className="hidden lg:flex items-center gap-5 text-xs font-medium text-slate-300">
           <button
             onClick={onOpenSounds}
             className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors whitespace-nowrap shrink-0"
           >
             <Volume2 className="w-3.5 h-3.5" />
-            <span>Alert Sounds</span>
+            <span>Adhan Sounds</span>
           </button>
           <button
             onClick={onOpenQibla}
@@ -79,12 +77,12 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </nav>
 
-        {/* Zone 3: Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          {/* Notification Quick Toggle / Status Button */}
+        {/* Zone 3: Actions (Responsive & Compact) */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Notification Quick Toggle Button */}
           <button
             onClick={onOpenNotifications}
-            className={`p-2 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-semibold ${
+            className={`p-1.5 sm:px-2.5 sm:py-1.5 rounded-xl border transition-all flex items-center gap-1.5 text-xs font-semibold ${
               notificationPermission === 'granted'
                 ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400 hover:bg-emerald-900/60'
                 : 'bg-amber-950/40 border-amber-500/30 text-amber-300 hover:bg-amber-900/50'
@@ -101,27 +99,28 @@ export const Header: React.FC<HeaderProps> = ({
             </span>
           </button>
 
-          {/* GitHub & Mobile Device Setup Button */}
+          {/* GitHub / Mobile Setup Button (hidden on very small screens, accessible via bottom bar) */}
           <button
             onClick={onOpenGitHubPublish}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-emerald-500/40 hover:bg-slate-800 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-900 border border-slate-700/80 hover:border-emerald-500/40 hover:bg-slate-800 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap"
             title="Scan QR code for mobile or publish to GitHub"
           >
             <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="hidden sm:inline">Phone &amp; GitHub</span>
-            <span className="sm:hidden">Phone</span>
+            <span>Phone &amp; GitHub</span>
           </button>
 
-          <PWAInstallButton />
+          <div className="hidden sm:block">
+            <PWAInstallButton />
+          </div>
 
           {/* Location button */}
           <button
             onClick={onOpenLocation}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap shrink-0"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 hover:border-emerald-500/50 hover:bg-slate-800 text-xs font-medium text-slate-200 transition-colors whitespace-nowrap shrink-0"
             title="Change Location"
           >
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="max-w-[90px] sm:max-w-[140px] truncate">{location.city}</span>
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="max-w-[75px] xs:max-w-[100px] sm:max-w-[140px] truncate">{location.city}</span>
           </button>
         </div>
       </div>

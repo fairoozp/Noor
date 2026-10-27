@@ -141,10 +141,10 @@ export const SoundCustomizerModal: React.FC<SoundCustomizerModalProps> = ({
         </div>
 
         {/* Navigation Tabs */}
-        <div className="px-6 pt-4 border-b border-slate-800 flex items-center gap-2 shrink-0">
+        <div className="px-4 sm:px-6 pt-3 sm:pt-4 border-b border-slate-800 flex items-center gap-1 sm:gap-2 shrink-0 overflow-x-auto">
           <button
             onClick={() => setActiveTab('prayers')}
-            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-colors border-b-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-xl transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'prayers'
                 ? 'border-emerald-500 text-white bg-slate-800/50'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -152,13 +152,14 @@ export const SoundCustomizerModal: React.FC<SoundCustomizerModalProps> = ({
           >
             <span className="flex items-center gap-1.5">
               <Bell className="w-3.5 h-3.5" />
-              Per-Prayer Adhan Sounds
+              <span className="hidden sm:inline">Per-Prayer Adhan Sounds</span>
+              <span className="sm:hidden">Adhans</span>
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('end_reminder')}
-            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-colors border-b-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-xl transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'end_reminder'
                 ? 'border-emerald-500 text-white bg-slate-800/50'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -166,13 +167,14 @@ export const SoundCustomizerModal: React.FC<SoundCustomizerModalProps> = ({
           >
             <span className="flex items-center gap-1.5">
               <Hourglass className="w-3.5 h-3.5 text-amber-400" />
-              End-of-Prayer Reminder
+              <span className="hidden sm:inline">End-of-Prayer Reminder</span>
+              <span className="sm:hidden">End Alert</span>
             </span>
           </button>
 
           <button
             onClick={() => setActiveTab('soundboard')}
-            className={`px-4 py-2.5 text-xs font-semibold rounded-t-xl transition-colors border-b-2 ${
+            className={`px-3 sm:px-4 py-2 sm:py-2.5 text-xs font-semibold rounded-t-xl transition-colors border-b-2 whitespace-nowrap ${
               activeTab === 'soundboard'
                 ? 'border-emerald-500 text-white bg-slate-800/50'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -180,7 +182,8 @@ export const SoundCustomizerModal: React.FC<SoundCustomizerModalProps> = ({
           >
             <span className="flex items-center gap-1.5">
               <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-              Sound Library Preview
+              <span className="hidden sm:inline">Sound Library</span>
+              <span className="sm:hidden">Library</span>
             </span>
           </button>
         </div>
@@ -278,11 +281,17 @@ export const SoundCustomizerModal: React.FC<SoundCustomizerModalProps> = ({
                           </button>
 
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-xs font-bold text-white truncate">{preset.name}</span>
-                              <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 text-slate-400 bg-slate-800 rounded">
-                                {preset.category}
-                              </span>
+                              {preset.category === 'adhan' ? (
+                                <span className="text-[9px] font-semibold font-mono px-1.5 py-0.2 text-emerald-300 bg-emerald-950 border border-emerald-500/40 rounded">
+                                  Original MP3
+                                </span>
+                              ) : (
+                                <span className="text-[10px] uppercase font-mono px-1.5 py-0.2 text-slate-400 bg-slate-800 rounded">
+                                  {preset.category}
+                                </span>
+                              )}
                             </div>
                             <p className="text-[11px] text-slate-400 truncate mt-0.5">{preset.description}</p>
                           </div>

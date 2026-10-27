@@ -3,27 +3,39 @@ import { AlertSoundId, SoundPreset } from '../types/prayer';
 export const SOUND_PRESETS: SoundPreset[] = [
   {
     id: 'adhan_makkah',
-    name: 'Makkah Adhan (Maqam Bayati)',
+    name: 'Original Makkah Adhan (Masjid al-Haram)',
     category: 'adhan',
-    description: 'Iconic Grand Mosque melody with rich harmonics and contemplative cadence',
+    description: 'Authentic Grand Mosque recording by legendary Muezzin Sheikh Ali Ibn Ahmad Mulla',
   },
   {
     id: 'adhan_madinah',
-    name: 'Madinah Adhan (Maqam Rast)',
+    name: 'Original Madinah Adhan (Prophet’s Mosque)',
     category: 'adhan',
-    description: 'Warm, serene Prophet’s Mosque acoustic melody with gentle resonance',
+    description: 'Authentic Al-Masjid an-Nabawi call to prayer with serene acoustic cadence',
   },
   {
     id: 'adhan_fajr_melody',
-    name: 'Fajr Dawn Melodic Call',
+    name: 'Original Fajr Dawn Adhan (Makkah)',
     category: 'adhan',
-    description: 'Special dawn melody incorporating the contemplative Assalatu Khayrum Minan-Nawm intervals',
+    description: 'Authentic dawn call with "Assalatu khayrun minan-nawm" (Prayer is better than sleep)',
   },
   {
     id: 'adhan_alaqsa',
-    name: 'Al-Aqsa Style Tone',
+    name: 'Original Al-Aqsa Adhan (Jerusalem)',
     category: 'adhan',
-    description: 'Dignified traditional cadence with deep acoustic projection',
+    description: 'Historic recording from the sacred Al-Aqsa Mosque compound',
+  },
+  {
+    id: 'adhan_mishary',
+    name: 'Original Adhan - Mishary Rashid Alafasy',
+    category: 'adhan',
+    description: 'Renowned emotional call to prayer by Sheikh Mishary Rashid Alafasy',
+  },
+  {
+    id: 'adhan_abdulbasit',
+    name: 'Original Adhan - Abdul Basit Abdul Samad',
+    category: 'adhan',
+    description: 'Legendary golden-age recitation and majestic maqam delivery',
   },
   {
     id: 'soft_dawn_chime',
@@ -81,12 +93,25 @@ export const SOUND_PRESETS: SoundPreset[] = [
   },
 ];
 
+// Map sound IDs to real original authentic MP3 recordings stored in /audio/
+const AUTHENTIC_ADHAN_MAP: Record<string, string> = {
+  adhan_makkah: '/audio/adhan_makkah.mp3',
+  adhan_madinah: '/audio/adhan_madinah.mp3',
+  adhan_fajr_melody: '/audio/adhan_fajr.mp3',
+  adhan_alaqsa: '/audio/adhan_alaqsa.mp3',
+  adhan_mishary: '/audio/adhan_mishary.mp3',
+  adhan_abdulbasit: '/audio/adhan_abdulbasit.mp3',
+};
+
+let currentAudioEl: HTMLAudioElement | null = null;
 let audioCtx: AudioContext | null = null;
 let activeNodes: { stop: () => void }[] = [];
 
 function getAudioContext(): AudioContext {
   if (!audioCtx) {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const AudioContextClass =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
     audioCtx = new AudioContextClass();
   }
   if (audioCtx.state === 'suspended') {
@@ -96,18 +121,30 @@ function getAudioContext(): AudioContext {
 }
 
 export function stopAllSounds() {
-  activeNodes.forEach(node => {
+  // Stop HTML5 Audio if playing
+  if (currentAudioEl) {
+    try {
+      currentAudioEl.pause();
+      currentAudioEl.currentTime = 0;
+    } catch {
+      // ignore
+    }
+    currentAudioEl = null;
+  }
+
+  // Stop any active WebAudio nodes
+  activeNodes.forEach((node) => {
     try {
       node.stop();
     } catch {
-      // Ignore if already stopped
+      // ignore
     }
   });
   activeNodes = [];
 }
 
 /**
- * Play a synthesized sound with real acoustics
+ * Play authentic original Adhan MP3 or synthesized ambient alert chime
  */
 export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { stop: () => void } {
   stopAllSounds();
@@ -116,9 +153,50 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
     return { stop: () => {} };
   }
 
+  const safeVolume = Math.max(0, Math.min(1, volume));
+
+  // 1. If it's an authentic original Adhan recording, play real MP3
+  if (AUTHENTIC_ADHAN_MAP[soundId]) {
+    const audioUrl = AUTHENTIC_ADHAN_MAP[soundId];
+    const audio = new Audio(audioUrl);
+    audio.volume = safeVolume;
+    currentAudioEl = audio;
+
+    const playPromise = audio.play();
+    if (playPromise !== undefined) {
+      playPromise.catch((err) => {
+        console.warn('Direct HTML5 audio playback error:', err);
+        // Fall back to WebAudio synthesis if blocked by autoplay policy
+        playSynthesizedFallback(soundId, safeVolume);
+      });
+    }
+
+    const handle = {
+      stop: () => {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch {
+          // ignore
+        }
+        if (currentAudioEl === audio) {
+          currentAudioEl = null;
+        }
+      },
+    };
+
+    activeNodes.push(handle);
+    return handle;
+  }
+
+  // 2. Play ambient chime / warning gong via WebAudio API
+  return playSynthesizedFallback(soundId, safeVolume);
+}
+
+function playSynthesizedFallback(soundId: AlertSoundId, volume: number): { stop: () => void } {
   const ctx = getAudioContext();
   const masterGain = ctx.createGain();
-  masterGain.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), ctx.currentTime);
+  masterGain.gain.setValueAtTime(volume, ctx.currentTime);
   masterGain.connect(ctx.destination);
 
   let isPlaying = true;
@@ -133,7 +211,7 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
       masterGain.gain.setValueAtTime(masterGain.gain.value, now);
       masterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.1);
       setTimeout(() => {
-        nodesToStop.forEach(n => {
+        nodesToStop.forEach((n) => {
           try {
             if ('stop' in n && typeof (n as AudioScheduledSourceNode).stop === 'function') {
               (n as AudioScheduledSourceNode).stop();
@@ -143,81 +221,15 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
           }
         });
       }, 150);
-    }
+    },
   };
 
   activeNodes.push(handle);
-
   const now = ctx.currentTime;
 
   switch (soundId) {
-    case 'adhan_makkah': {
-      // Maqam Bayati: D4, Eb4 (quarter tone approx ~308Hz), F4 (349Hz), G4 (392Hz), A4 (440Hz), Bb4 (466Hz)
-      // "Allahu Akbar, Allahu Akbar" cadence with vocal formant filter
-      const notes = [
-        { freq: 293.66, start: 0.0, dur: 0.8 }, // D4 - Al-
-        { freq: 392.00, start: 0.8, dur: 1.2 }, // G4 - lahu
-        { freq: 440.00, start: 2.1, dur: 1.4 }, // A4 - Ak-
-        { freq: 392.00, start: 3.6, dur: 1.8 }, // G4 - bar
-        { freq: 349.23, start: 5.6, dur: 0.9 }, // F4 - Al-
-        { freq: 392.00, start: 6.6, dur: 1.3 }, // G4 - lahu
-        { freq: 440.00, start: 8.0, dur: 1.5 }, // A4 - Ak-
-        { freq: 293.66, start: 9.6, dur: 2.4 }, // D4 - bar (final resolution)
-      ];
-
-      notes.forEach(({ freq, start, dur }) => {
-        playVocalTone(ctx, masterGain, freq, now + start, dur, nodesToStop);
-      });
-      break;
-    }
-
-    case 'adhan_madinah': {
-      // Maqam Rast: C4, D4, E(half-flat ~320Hz), F4, G4, A4
-      const notes = [
-        { freq: 261.63, start: 0.0, dur: 0.7 }, // C4
-        { freq: 329.63, start: 0.8, dur: 1.2 }, // E4
-        { freq: 392.00, start: 2.1, dur: 1.5 }, // G4
-        { freq: 349.23, start: 3.7, dur: 1.4 }, // F4
-        { freq: 261.63, start: 5.2, dur: 2.0 }, // C4
-      ];
-      notes.forEach(({ freq, start, dur }) => {
-        playVocalTone(ctx, masterGain, freq, now + start, dur, nodesToStop, 0.4);
-      });
-      break;
-    }
-
-    case 'adhan_fajr_melody': {
-      // Dawn melodic cadence with reflective flute/vocal overtones
-      const notes = [
-        { freq: 329.63, start: 0.0, dur: 0.9 }, // E4
-        { freq: 392.00, start: 1.0, dur: 1.4 }, // G4
-        { freq: 493.88, start: 2.5, dur: 1.8 }, // B4
-        { freq: 440.00, start: 4.4, dur: 1.2 }, // A4
-        { freq: 392.00, start: 5.7, dur: 1.5 }, // G4
-        { freq: 329.63, start: 7.3, dur: 2.5 }, // E4
-      ];
-      notes.forEach(({ freq, start, dur }) => {
-        playFluteTone(ctx, masterGain, freq, now + start, dur, nodesToStop);
-      });
-      break;
-    }
-
-    case 'adhan_alaqsa': {
-      const notes = [
-        { freq: 246.94, start: 0.0, dur: 0.8 }, // B3
-        { freq: 329.63, start: 0.9, dur: 1.3 }, // E4
-        { freq: 392.00, start: 2.3, dur: 1.7 }, // G4
-        { freq: 369.99, start: 4.1, dur: 1.4 }, // F#4
-        { freq: 246.94, start: 5.6, dur: 2.2 }, // B3
-      ];
-      notes.forEach(({ freq, start, dur }) => {
-        playVocalTone(ctx, masterGain, freq, now + start, dur, nodesToStop, 0.5);
-      });
-      break;
-    }
-
     case 'soft_dawn_chime': {
-      const chimeFreqs = [659.25, 830.61, 987.77, 1318.51]; // E5, G#5, B5, E6
+      const chimeFreqs = [659.25, 830.61, 987.77, 1318.51];
       chimeFreqs.forEach((freq, idx) => {
         playChime(ctx, masterGain, freq, now + idx * 0.35, 3.0, nodesToStop);
       });
@@ -226,14 +238,14 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
 
     case 'oud_melody': {
       const notes = [
-        { freq: 220.00, start: 0.0 }, // A3
-        { freq: 246.94, start: 0.25 }, // B3
-        { freq: 261.63, start: 0.5 }, // C4
-        { freq: 329.63, start: 0.8 }, // E4
-        { freq: 392.00, start: 1.15 }, // G4
-        { freq: 440.00, start: 1.5 }, // A4
-        { freq: 329.63, start: 2.1 }, // E4
-        { freq: 220.00, start: 2.8 }, // A3 (long)
+        { freq: 220.0, start: 0.0 },
+        { freq: 246.94, start: 0.25 },
+        { freq: 261.63, start: 0.5 },
+        { freq: 329.63, start: 0.8 },
+        { freq: 392.0, start: 1.15 },
+        { freq: 440.0, start: 1.5 },
+        { freq: 329.63, start: 2.1 },
+        { freq: 220.0, start: 2.8 },
       ];
       notes.forEach(({ freq, start }) => {
         playOudPluck(ctx, masterGain, freq, now + start, nodesToStop);
@@ -242,7 +254,6 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
     }
 
     case 'resonant_bowl': {
-      // 432 Hz fundamental with natural metallic overtones
       const bowlFreqs = [432, 864, 1296, 1728];
       bowlFreqs.forEach((freq, i) => {
         const gain = 0.5 / (i + 1);
@@ -252,9 +263,9 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
     }
 
     case 'gentle_bell': {
-      playTubularBell(ctx, masterGain, 523.25, now, 4.0, nodesToStop); // C5
-      playTubularBell(ctx, masterGain, 659.25, now + 0.6, 4.0, nodesToStop); // E5
-      playTubularBell(ctx, masterGain, 783.99, now + 1.2, 5.0, nodesToStop); // G5
+      playTubularBell(ctx, masterGain, 523.25, now, 4.0, nodesToStop);
+      playTubularBell(ctx, masterGain, 659.25, now + 0.6, 4.0, nodesToStop);
+      playTubularBell(ctx, masterGain, 783.99, now + 1.2, 5.0, nodesToStop);
       break;
     }
 
@@ -265,14 +276,12 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
     }
 
     case 'warning_gong': {
-      // End of prayer warning: Deep, respectful acoustic gong with amber decay
-      playGong(ctx, masterGain, 196.00, now, 4.5, nodesToStop); // G3
-      playChime(ctx, masterGain, 392.00, now + 0.05, 3.0, nodesToStop, 0.25);
+      playGong(ctx, masterGain, 196.0, now, 4.5, nodesToStop);
+      playChime(ctx, masterGain, 392.0, now + 0.05, 3.0, nodesToStop, 0.25);
       break;
     }
 
     case 'warning_pulse': {
-      // Gentle warning double pulse
       playWarningPulse(ctx, masterGain, 440, now, 0.3, nodesToStop);
       playWarningPulse(ctx, masterGain, 554.37, now + 0.4, 0.5, nodesToStop);
       break;
@@ -283,106 +292,18 @@ export function playAlertSound(soundId: AlertSoundId, volume: number = 0.8): { s
       playWoodblock(ctx, masterGain, 950, now + 0.18, nodesToStop);
       break;
     }
+
+    default: {
+      // Generic pleasant alert chime
+      playChime(ctx, masterGain, 587.33, now, 2.5, nodesToStop, 0.4);
+      playChime(ctx, masterGain, 880.0, now + 0.2, 3.0, nodesToStop, 0.35);
+      break;
+    }
   }
 
   return handle;
 }
 
-// Helper: Vocal tone synthesizer with formant filtering (simulates human adhan vocal resonance)
-function playVocalTone(
-  ctx: AudioContext,
-  dest: AudioNode,
-  freq: number,
-  startTime: number,
-  duration: number,
-  nodesList: AudioNode[],
-  baseGain = 0.45
-) {
-  const osc1 = ctx.createOscillator();
-  const osc2 = ctx.createOscillator();
-  const vibrato = ctx.createOscillator();
-  const vibratoGain = ctx.createGain();
-
-  // Vibrato LFO
-  vibrato.frequency.setValueAtTime(4.8, startTime);
-  vibratoGain.gain.setValueAtTime(2.5, startTime);
-  vibrato.connect(vibratoGain);
-  vibratoGain.connect(osc1.frequency);
-  vibratoGain.connect(osc2.frequency);
-
-  osc1.type = 'sawtooth';
-  osc2.type = 'triangle';
-  osc1.frequency.setValueAtTime(freq, startTime);
-  osc2.frequency.setValueAtTime(freq * 1.002, startTime); // slight detune for warmth
-
-  // Vocal formant filters
-  const formant1 = ctx.createBiquadFilter();
-  formant1.type = 'bandpass';
-  formant1.frequency.setValueAtTime(750, startTime); // "Ah" vowel formant
-  formant1.Q.setValueAtTime(4.0, startTime);
-
-  const formant2 = ctx.createBiquadFilter();
-  formant2.type = 'lowpass';
-  formant2.frequency.setValueAtTime(2200, startTime);
-
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.0001, startTime);
-  gain.gain.linearRampToValueAtTime(baseGain, startTime + 0.25);
-  gain.gain.setValueAtTime(baseGain, startTime + duration - 0.3);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-  osc1.connect(formant1);
-  osc2.connect(formant1);
-  formant1.connect(formant2);
-  formant2.connect(gain);
-  gain.connect(dest);
-
-  osc1.start(startTime);
-  osc2.start(startTime);
-  vibrato.start(startTime);
-
-  osc1.stop(startTime + duration + 0.1);
-  osc2.stop(startTime + duration + 0.1);
-  vibrato.stop(startTime + duration + 0.1);
-
-  nodesList.push(osc1, osc2, vibrato);
-}
-
-// Helper: Nay / Flute tone synthesizer
-function playFluteTone(
-  ctx: AudioContext,
-  dest: AudioNode,
-  freq: number,
-  startTime: number,
-  duration: number,
-  nodesList: AudioNode[]
-) {
-  const osc = ctx.createOscillator();
-  osc.type = 'sine';
-  osc.frequency.setValueAtTime(freq, startTime);
-
-  // Subtle breath noise
-  const filter = ctx.createBiquadFilter();
-  filter.type = 'bandpass';
-  filter.frequency.setValueAtTime(freq, startTime);
-  filter.Q.setValueAtTime(3.0, startTime);
-
-  const gain = ctx.createGain();
-  gain.gain.setValueAtTime(0.0001, startTime);
-  gain.gain.linearRampToValueAtTime(0.35, startTime + 0.3);
-  gain.gain.setValueAtTime(0.35, startTime + duration - 0.4);
-  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-  osc.connect(filter);
-  filter.connect(gain);
-  gain.connect(dest);
-
-  osc.start(startTime);
-  osc.stop(startTime + duration + 0.1);
-  nodesList.push(osc);
-}
-
-// Helper: Pure bell / crystal chime
 function playChime(
   ctx: AudioContext,
   dest: AudioNode,
@@ -396,7 +317,6 @@ function playChime(
   osc.type = 'sine';
   osc.frequency.setValueAtTime(freq, startTime);
 
-  // Overtone
   const overtone = ctx.createOscillator();
   overtone.type = 'sine';
   overtone.frequency.setValueAtTime(freq * 2.76, startTime);
@@ -423,7 +343,6 @@ function playChime(
   nodesList.push(osc, overtone);
 }
 
-// Helper: Oud pluck sound
 function playOudPluck(
   ctx: AudioContext,
   dest: AudioNode,
@@ -454,7 +373,6 @@ function playOudPluck(
   nodesList.push(osc);
 }
 
-// Helper: Tubular bell
 function playTubularBell(
   ctx: AudioContext,
   dest: AudioNode,
@@ -488,7 +406,6 @@ function playTubularBell(
   nodesList.push(fundamental, partial2);
 }
 
-// Helper: Acoustic gong
 function playGong(
   ctx: AudioContext,
   dest: AudioNode,
@@ -522,7 +439,6 @@ function playGong(
   nodesList.push(osc1, osc2);
 }
 
-// Helper: Warning pulse
 function playWarningPulse(
   ctx: AudioContext,
   dest: AudioNode,
@@ -548,7 +464,6 @@ function playWarningPulse(
   nodesList.push(osc);
 }
 
-// Helper: Acoustic woodblock
 function playWoodblock(
   ctx: AudioContext,
   dest: AudioNode,
