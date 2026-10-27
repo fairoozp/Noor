@@ -15,7 +15,8 @@ export function isRunningInIframe(): boolean {
 export function isIOS(): boolean {
   if (typeof window === 'undefined') return false;
   const ua = window.navigator.userAgent.toLowerCase();
-  return /iphone|ipad|ipod/.test(ua);
+  const isTouchMac = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+  return /iphone|ipad|ipod/.test(ua) || isTouchMac;
 }
 
 export function isStandalone(): boolean {
@@ -33,41 +34,68 @@ export function getNotificationPermission(): NotificationPermissionState {
   return Notification.permission as NotificationPermissionState;
 }
 
-export async function requestNotificationPermission(): Promise<{
+export function requestNotificationPermission(): Promise<{
   state: NotificationPermissionState;
   reason?: 'iframe' | 'ios_needs_pwa' | 'denied' | 'unsupported' | 'success';
 }> {
-  if (typeof window === 'undefined' || !('Notification' in window)) {
-    if (isIOS() && !isStandalone()) {
-      return { state: 'unsupported', reason: 'ios_needs_pwa' };
-    }
-    return { state: 'unsupported', reason: 'unsupported' };
+  if (typeof window === 'undefined') {
+    return Promise.resolve({ state: 'unsupported', reason: 'unsupported' });
+  }
+
+  // Apple iOS Safari & Chrome browser tab constraint
+  if (isIOS() && !isStandalone()) {
+    return Promise.resolve({ state: 'unsupported', reason: 'ios_needs_pwa' });
+  }
+
+  if (!('Notification' in window)) {
+    return Promise.resolve({ state: 'unsupported', reason: 'unsupported' });
   }
 
   // Handle iframe environment safely without uncaught DOMException
   if (isRunningInIframe()) {
     try {
-      const perm = await Notification.requestPermission();
-      return { state: perm as NotificationPermissionState, reason: perm === 'granted' ? 'success' : 'iframe' };
+      const res = Notification.requestPermission();
+      if (res && typeof res.then === 'function') {
+        return res
+          .then((perm) => ({ state: perm as NotificationPermissionState, reason: perm === 'granted' ? ('success' as const) : ('iframe' as const) }))
+          .catch(() => ({ state: Notification.permission as NotificationPermissionState, reason: 'iframe' as const }));
+      }
     } catch {
-      return { state: Notification.permission as NotificationPermissionState, reason: 'iframe' };
+      return Promise.resolve({ state: Notification.permission as NotificationPermissionState, reason: 'iframe' });
     }
   }
 
+  // Directly call synchronously within user gesture
   try {
-    const perm = await Notification.requestPermission();
-    return { state: perm as NotificationPermissionState, reason: perm === 'granted' ? 'success' : 'denied' };
-  } catch {
-    return new Promise((resolve) => {
-      try {
-        Notification.requestPermission((result) => {
-          resolve({ state: result as NotificationPermissionState, reason: result === 'granted' ? 'success' : 'denied' });
-        });
-      } catch {
-        resolve({ state: Notification.permission as NotificationPermissionState, reason: 'denied' });
-      }
-    });
+    const res = Notification.requestPermission();
+    if (res && typeof res.then === 'function') {
+      return res
+        .then((perm) => ({
+          state: perm as NotificationPermissionState,
+          reason: perm === 'granted' ? ('success' as const) : ('denied' as const),
+        }))
+        .catch(() => ({
+          state: Notification.permission as NotificationPermissionState,
+          reason: 'denied' as const,
+        }));
+    }
+  } catch (err) {
+    console.warn('Promise-based Notification.requestPermission failed, trying callback:', err);
   }
+
+  // Callback fallback for Safari WebKit
+  return new Promise((resolve) => {
+    try {
+      Notification.requestPermission((result) => {
+        resolve({
+          state: result as NotificationPermissionState,
+          reason: result === 'granted' ? ('success' as const) : ('denied' as const),
+        });
+      });
+    } catch {
+      resolve({ state: Notification.permission as NotificationPermissionState, reason: 'denied' });
+    }
+  });
 }
 
 /**

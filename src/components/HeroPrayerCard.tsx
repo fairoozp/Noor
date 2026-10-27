@@ -2,7 +2,7 @@ import React from 'react';
 import { Clock, Bell, BellOff, Volume2, Hourglass } from 'lucide-react';
 import { DayPrayerSummary, formatTime, formatDuration } from '../services/prayerService.ts';
 import { PrayerSettings, UserLocation } from '../types/prayer.ts';
-import { NotificationPermissionState } from '../services/notificationService.ts';
+import { NotificationPermissionState, isIOS, isStandalone } from '../services/notificationService.ts';
 import heroBgImage from '../assets/images/islamic_twilight_serene_1793108272814.jpg';
 
 interface HeroPrayerCardProps {
@@ -63,7 +63,7 @@ export const HeroPrayerCard: React.FC<HeroPrayerCardProps> = ({
                 title="Configure and enable push notifications"
               >
                 <BellOff className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
-                <span>Enable Push Notifications</span>
+                <span>{typeof window !== 'undefined' && isIOS() && !isStandalone() ? 'Enable on iPhone' : 'Enable Push Notifications'}</span>
               </button>
             ) : (
               <button

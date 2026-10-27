@@ -36,6 +36,8 @@ import {
   getNotificationPermission,
   NotificationPermissionState,
   requestNotificationPermission,
+  isIOS,
+  isStandalone,
 } from './services/notificationService.ts';
 import { stopAllSounds } from './services/soundEngine.ts';
 import { Header } from './components/Header.tsx';
@@ -345,12 +347,16 @@ export default function App() {
               </div>
               <div>
                 <h3 className="text-sm font-bold text-white">
-                  {notificationPermission === 'denied'
+                  {typeof window !== 'undefined' && isIOS() && !isStandalone()
+                    ? 'iPhone / iPad: Enable Adhan Notifications'
+                    : notificationPermission === 'denied'
                     ? 'Push Notifications Blocked by Browser'
                     : 'Enable Push Notifications for Adhan & End Reminders'}
                 </h3>
                 <p className="text-xs text-slate-300">
-                  {notificationPermission === 'denied'
+                  {typeof window !== 'undefined' && isIOS() && !isStandalone()
+                    ? 'Safari & Chrome require adding Noor to your Home Screen first to receive push alerts. Tap to view 2-step setup.'
+                    : notificationPermission === 'denied'
                     ? 'Notifications are blocked in site settings. Click to view quick reset instructions or test audio alerts.'
                     : 'Receive timely notifications for each prayer throughout the day and warning before prayer times expire.'}
                 </p>
@@ -359,10 +365,24 @@ export default function App() {
 
             <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
-                onClick={() => setIsNotificationModalOpen(true)}
+                onClick={async () => {
+                  if (isIOS() && !isStandalone()) {
+                    setIsNotificationModalOpen(true);
+                  } else {
+                    const res = await requestNotificationPermission();
+                    setNotificationPermission(res.state);
+                    if (res.state !== 'granted') {
+                      setIsNotificationModalOpen(true);
+                    }
+                  }
+                }}
                 className="flex-1 sm:flex-none px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-semibold text-white whitespace-nowrap shadow-md transition-colors text-center"
               >
-                {notificationPermission === 'denied' ? 'Resolve in Settings' : 'Configure Notifications'}
+                {typeof window !== 'undefined' && isIOS() && !isStandalone()
+                  ? 'iPhone Setup Guide'
+                  : notificationPermission === 'denied'
+                  ? 'Resolve in Settings'
+                  : 'Allow Notifications'}
               </button>
             </div>
           </div>
